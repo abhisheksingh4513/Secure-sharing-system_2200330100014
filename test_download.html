@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Test</title>
+</head>
+<body>
+    <h1>Download Test</h1>
+    <button onclick="testDownload()">Test Download</button>
+    <div id="result"></div>
+
+    <script>
+        async function testDownload() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                // First, create a client user and login
+                const signupData = {
+                    email: `test${Date.now()}@example.com`,
+                    username: `test${Date.now()}`,
+                    password: 'testpass123',
+                    user_type: 'client'
+                };
+                
+                // Signup
+                const signupResponse = await fetch('http://localhost:8000/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(signupData)
+                });
+                const signupResult = await signupResponse.json();
+                console.log('Signup result:', signupResult);
+                
+                // Verify
+                await fetch(`http://localhost:8000/auth/manual-verify/${signupResult.user_id}`, {
+                    method: 'POST'
+                });
+                
+                // Login
+                const loginResponse = await fetch('http://localhost:8000/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: signupData.username,
+                        password: 'testpass123'
+                    })
+                });
+                const loginResult = await loginResponse.json();
+                console.log('Login result:', loginResult);
+                
+                // Get download link
+                const downloadLinkResponse = await fetch('http://localhost:8000/files/get-download-link/5', {
+                    headers: {
+                        'Authorization': `Bearer ${loginResult.access_token}`
+                    }
+                });
+                const downloadLinkResult = await downloadLinkResponse.json();
+                console.log('Download link result:', downloadLinkResult);
+                
+                if (downloadLinkResponse.ok) {
+                    // Try to download the file
+                    const downloadUrl = `http://localhost:8000${downloadLinkResult.download_link}`;
+                    console.log('Download URL:', downloadUrl);
+                    
+                    const fileResponse = await fetch(downloadUrl);
+                    console.log('File response status:', fileResponse.status);
+                    console.log('File response headers:', [...fileResponse.headers.entries()]);
+                    
+                    if (fileResponse.ok) {
+                        const blob = await fileResponse.blob();
+                        console.log('Blob size:', blob.size);
+                        
+                        // Create download
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'test_file.docx';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        
+                        result.innerHTML = '✅ Download successful!';
+                    } else {
+                        const errorText = await fileResponse.text();
+                        result.innerHTML = `❌ File download failed: ${fileResponse.status} - ${errorText}`;
+                    }
+                } else {
+                    result.innerHTML = `❌ Download link failed: ${downloadLinkResult.detail}`;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                result.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

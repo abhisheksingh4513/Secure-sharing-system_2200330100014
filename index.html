@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure File Sharing System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .tab-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #5a67d8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-offline {
+            background: #dc3545;
+        }
+
+        .api-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-status">
+        <span class="status-indicator status-offline" id="statusIndicator"></span>
+        <span id="statusText">Checking API...</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Secure File Sharing System</h1>
+            <p>Upload and share files securely with role-based access control</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('login')">Login</button>
+            <button class="tab-button" onclick="showTab('signup')">Sign Up</button>
+            <button class="tab-button" onclick="showTab('upload')">Upload Files</button>
+            <button class="tab-button" onclick="showTab('download')">Download Files</button>
+        </div>
+
+        <!-- Login Tab -->
+        <div id="login" class="tab-content active">
+            <h2>Login</h2>
+            <div id="loginAlert" class="alert hidden"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>User Type:</label>
+                    <select id="userType" required>
+                        <option value="client">Client User</option>
+                        <option value="ops">Operations User</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="username" required placeholder="Enter your username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                
+                <button type="submit" class="btn" id="loginBtn">
+                    <span class="btn-text">Login</span>
+                    <span class="loading hidden"></span>
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4>Default Operations User:</h4>
+                <p><strong>Username:</strong> admin</p>
+                <p><strong>Password:</strong> admin123</p>
+            </div>
+        </div>
+
+        <!-- Sign Up Tab -->
+        <div id="signup" class="tab-content">
+            <h2>Client User Registration</h2>
+            <div id="signupAlert" class="alert hidden"></div>
+            
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="signupEmail" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="signupUsername" required placeholder="Choose a username">
+                </div>
+                
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="signupPassword" required placeholder="Choose a password (min 6 characters)">
+                </div>
+                
+                <button type="submit" class="btn" id="signupBtn">
+                    <span class="btn-text">Sign Up</span>
+                    <span class="loading hidden"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Upload Tab -->
+        <div id="upload" class="tab-content">
+            <h2>File Upload (Operations Users Only)</h2>
+            <div id="uploadAlert" class="alert hidden"></div>
+            
+            <div id="uploadSection" class="hidden">
+                <div class="upload-area" id="uploadArea">
+                    <h3>📁 Drop files here or click to select</h3>
+                    <p>Supported formats: .pptx, .docx, .xlsx (Max: 50MB)</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".pptx,.docx,.xlsx">
+                </div>
+                
+                <button class="btn" id="uploadBtn" disabled>
+                    <span class="btn-text">Upload File</span>
+                    <span class="loading hidden"></span>
+                </button>
+                
+                <div id="uploadProgress" class="hidden" style="margin-top: 20px;">
+                    <div style="background: #e9ecef; border-radius: 10px; height: 20px;">
+                        <div id="progressBar" style="background: #667eea; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p id="progressText" style="text-align: center; margin-top: 10px;">Uploading...</p>
+                </div>
+            </div>
+            
+            <div id="uploadLoginPrompt">
+                <div class="alert alert-info">
+                    <strong>Operations User Required:</strong> Please login as an Operations User to upload files.
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Tab -->
+        <div id="download" class="tab-content">
+            <h2>File Downloads (Client Users Only)</h2>
+            <div id="downloadAlert" class="alert hidden"></div>
+            
+            <div id="downloadSection" class="hidden">
+                <button class="btn" onclick="loadFiles()" id="refreshBtn">
+                    <span class="btn-text">🔄 Refresh File List</span>
+                    <span class="loading hidden"></span>
+                </button>
+                
+                <div id="fileList" class="file-list"></div>
+            </div>
+            
+            <div id="downloadLoginPrompt">
+                <div class="alert alert-info">
+                    <strong>Client User Required:</strong> Please login as a Client User to download files.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentToken = null;
+        let currentUserType = null;
+        let selectedFile = null;
+
+        // Check API status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                if (response.ok) {
+                    document.getElementById('statusIndicator').className = 'status-indicator status-online';
+                    document.getElementById('statusText').textContent = 'API Online';
+                } else {
+                    throw new Error('API not responding');
+                }
+            } catch (error) {
+                document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+                document.getElementById('statusText').textContent = 'API Offline';
+            }
+        }
+
+        // Show/hide tabs
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Update visibility based on login status
+            updateUIBasedOnAuth();
+        }
+
+        // Update UI based on authentication
+        function updateUIBasedOnAuth() {
+            const uploadSection = document.getElementById('uploadSection');
+            const uploadPrompt = document.getElementById('uploadLoginPrompt');
+            const downloadSection = document.getElementById('downloadSection');
+            const downloadPrompt = document.getElementById('downloadLoginPrompt');
+
+            if (currentToken && currentUserType === 'ops') {
+                uploadSection.classList.remove('hidden');
+                uploadPrompt.classList.add('hidden');
+            } else {
+                uploadSection.classList.add('hidden');
+                uploadPrompt.classList.remove('hidden');
+            }
+
+            if (currentToken && currentUserType === 'client') {
+                downloadSection.classList.remove('hidden');
+                downloadPrompt.classList.add('hidden');
+                loadFiles();
+            } else {
+                downloadSection.classList.add('hidden');
+                downloadPrompt.classList.remove('hidden');
+            }
+        }
+
+        // Show alert
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = loginBtn.querySelector('.btn-text');
+            const loading = loginBtn.querySelector('.loading');
+            
+            btnText.classList.add('hidden');
+            loading.classList.remove('hidden');
+            loginBtn.disabled = true;
+
+            const userType = document.getElementById('userType').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const endpoint = userType === 'ops' ? '/auth/ops-login' : '/auth/login';
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentToken = data.access_token;
+                    currentUserType = userType;
+                    showAlert('loginAlert', `✅ Login successful! Welcome, ${username}`, 'success');
+                    updateUIBasedOnAuth();
+                } else {
+                    showAlert('loginAlert', `❌ Login failed: ${data.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('loginAlert', '❌ Connection error. Please check if the API server is running.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Signup form
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const signupBtn = document.getElementById('signupBtn');
+            const btnText = signupBtn.querySelector('.btn-text');
+            const loading = signupBtn.querySelector('.loading');
+            
+            btnText.classList.add('hidden');
+            loading.classList.remove('hidden');
+            signupBtn.disabled = true;
+
+            const email = document.getElementById('signupEmail').value;
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email,
+                        username,
+                        password,
+                        user_type: 'client'
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('signupAlert', 
+                        `✅ Registration successful! User ID: ${data.user_id}. Click "Verify Email" below to activate your account.`, 
+                        'success'
+                    );
+                    document.getElementById('signupForm').reset();
+                    
+                    // Show manual verification button
+                    const verifyBtn = document.createElement('button');
+                    verifyBtn.className = 'btn';
+                    verifyBtn.style.marginTop = '10px';
+                    verifyBtn.textContent = 'Verify Email (Demo)';
+                    verifyBtn.onclick = () => manualVerifyUser(data.user_id);
+                    
+                    const alertDiv = document.getElementById('signupAlert');
+                    alertDiv.appendChild(verifyBtn);
+                } else {
+                    showAlert('signupAlert', `❌ Registration failed: ${data.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showAlert('signupAlert', '❌ Connection error. Please check if the API server is running.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                signupBtn.disabled = false;
+            }
+        });
+
+        // File upload functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                updateUploadButton();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            updateUploadButton();
+        });
+
+        function updateUploadButton() {
+            if (selectedFile) {
+                uploadBtn.disabled = false;
+                uploadBtn.querySelector('.btn-text').textContent = `Upload: ${selectedFile.name}`;
+            } else {
+                uploadBtn.disabled = true;
+                uploadBtn.querySelector('.btn-text').textContent = 'Upload File';
+            }
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile || !currentToken) return;
+
+            const btnText = uploadBtn.querySelector('.btn-text');
+            const loading = uploadBtn.querySelector('.loading');
+            const progress = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            btnText.classList.add('hidden');
+            loading.classList.remove('hidden');
+            uploadBtn.disabled = true;
+            progress.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        progressText.textContent = `Uploading... ${Math.round(percentComplete)}%`;
+                    }
+                });
+
+                xhr.onload = function() {
+                    progress.classList.add('hidden');
+                    
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        showAlert('uploadAlert', `✅ File uploaded successfully! File ID: ${data.id}`, 'success');
+                        selectedFile = null;
+                        fileInput.value = '';
+                        updateUploadButton();
+                    } else {
+                        try {
+                            const error = JSON.parse(xhr.responseText);
+                            showAlert('uploadAlert', `❌ Upload failed: ${error.detail}`, 'error');
+                        } catch {
+                            showAlert('uploadAlert', '❌ Upload failed: Server error', 'error');
+                        }
+                    }
+                    
+                    btnText.classList.remove('hidden');
+                    loading.classList.add('hidden');
+                    uploadBtn.disabled = false;
+                    progressBar.style.width = '0%';
+                };
+
+                xhr.onerror = function() {
+                    showAlert('uploadAlert', '❌ Upload failed: Network error', 'error');
+                    btnText.classList.remove('hidden');
+                    loading.classList.add('hidden');
+                    uploadBtn.disabled = false;
+                    progress.classList.add('hidden');
+                    progressBar.style.width = '0%';
+                };
+
+                xhr.open('POST', `${API_BASE}/files/upload`);
+                xhr.setRequestHeader('Authorization', `Bearer ${currentToken}`);
+                xhr.send(formData);
+
+            } catch (error) {
+                showAlert('uploadAlert', '❌ Upload failed: ' + error.message, 'error');
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                uploadBtn.disabled = false;
+                progress.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }
+        });
+
+        // Load files for download
+        async function loadFiles() {
+            if (!currentToken || currentUserType !== 'client') return;
+
+            const refreshBtn = document.getElementById('refreshBtn');
+            const btnText = refreshBtn.querySelector('.btn-text');
+            const loading = refreshBtn.querySelector('.loading');
+            
+            btnText.classList.add('hidden');
+            loading.classList.remove('hidden');
+            refreshBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/files/list`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const files = await response.json();
+                    displayFiles(files);
+                    showAlert('downloadAlert', `✅ Loaded ${files.length} files`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showAlert('downloadAlert', `❌ Failed to load files: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Load files error:', error);
+                showAlert('downloadAlert', '❌ Connection error while loading files', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                refreshBtn.disabled = false;
+            }
+        }
+
+        function displayFiles(files) {
+            const fileList = document.getElementById('fileList');
+            
+            if (files.length === 0) {
+                fileList.innerHTML = '<div class="alert alert-info">No files available for download.</div>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <h4>📄 ${file.original_filename}</h4>
+                        <p>Size: ${formatFileSize(file.file_size)} | Type: ${file.file_type.toUpperCase()} | Uploaded: ${new Date(file.upload_date).toLocaleString()}</p>
+                        <p>Uploaded by: ${file.uploader_username}</p>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-small download-btn" data-file-id="${file.id}" data-filename="${file.original_filename}">
+                            📥 Download
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add event listeners to download buttons
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const fileId = this.getAttribute('data-file-id');
+                    const filename = this.getAttribute('data-filename');
+                    downloadFileWithButton(fileId, filename, this);
+                });
+            });
+        }
+
+        async function downloadFileWithButton(fileId, filename, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span> Downloading...';
+            button.disabled = true;
+
+            try {
+                showAlert('downloadAlert', '🔄 Generating secure download link...', 'info');
+                
+                // First, get the secure download link
+                const response = await fetch(`${API_BASE}/files/get-download-link/${fileId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('downloadAlert', '✅ Download link generated! Starting download...', 'success');
+                    
+                    // Use the secure download link
+                    const downloadUrl = `${API_BASE}${data.download_link}`;
+                    console.log('Download URL:', downloadUrl); // Debug log
+                    
+                    // Fetch the file and create a blob download
+                    try {
+                        const fileResponse = await fetch(downloadUrl);
+                        if (fileResponse.ok) {
+                            const blob = await fileResponse.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = filename;
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // Clean up the blob URL
+                            window.URL.revokeObjectURL(url);
+                            
+                            showAlert('downloadAlert', '✅ Download completed successfully!', 'success');
+                        } else {
+                            throw new Error(`Download failed: ${fileResponse.status}`);
+                        }
+                    } catch (downloadError) {
+                        console.error('File download error:', downloadError);
+                        showAlert('downloadAlert', `❌ File download failed: ${downloadError.message}`, 'error');
+                    }
+
+                } else {
+                    showAlert('downloadAlert', `❌ Download failed: ${data.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showAlert('downloadAlert', '❌ Download failed: Connection error', 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Manual email verification for demo
+        async function manualVerifyUser(userId) {
+            try {
+                const response = await fetch(`${API_BASE}/auth/manual-verify/${userId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('signupAlert', '✅ Email verified successfully! You can now login.', 'success');
+                } else {
+                    showAlert('signupAlert', `❌ Verification failed: ${data.detail}`, 'error');
+                }
+            } catch (error) {
+                showAlert('signupAlert', '❌ Verification failed: Connection error', 'error');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Initialize
+        checkAPIStatus();
+        setInterval(checkAPIStatus, 30000); // Check API status every 30 seconds
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+This is a test document for the secure file sharing system.
+
+Features tested:
+- File upload (Operations users only)
+- File download (Client users only)
+- Secure download links
+- One-time use tokens
+- Role-based access control
+
+File type: .docx (Microsoft Word Document)
+Created for: API Testing with Postman
+System: Secure File Sharing System

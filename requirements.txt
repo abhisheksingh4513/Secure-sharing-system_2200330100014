@@ -1,0 +1,24 @@
+fastapi
+uvicorn
+sqlalchemy
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+python-decouple
+email-validator
+aiofiles
+cryptography
+itsdangerous
+jinja2
+
+# Testing packages
+pytest
+pytest-cov
+httpx
+locust
+
+# Database Drivers (uncomment the one you need)
+# psycopg2-binary  # PostgreSQL
+# pymysql          # MySQL
+# pyodbc           # SQL Server
+# cx_Oracle        # Oracle
